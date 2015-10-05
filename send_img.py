@@ -5,6 +5,8 @@ __copyright__ = '(C) 2015. GNU GPL 3.'
 
 """
 Send image over TCP on specified port.
+exmaple: python send_img.py images/camera.bmp
+
 """
 # USAGE: python FileSender.py [file]
 
