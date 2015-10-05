@@ -47,6 +47,7 @@ class ImageReceiver ( threading.Thread ):
 			if not data: break
 			f.write(data)
 		f.close()
+		print >> sys.stderr, total_data
 		print >> sys.stderr, '[ImageReceiver] data received:', len(total_data)
 		print >> sys.stderr, "[ImageReceiver] image type:", imghdr.what('temp_image_file')
 		self.get_contour()
