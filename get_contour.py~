@@ -42,15 +42,17 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 #apply canny
                 edges = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
                 #edges = auto_canny(edges)
+                #edges  = cv2.GaussianBlur(edges, (3,3), 0)
                 edges = cv2.Canny(edges,30,190)
                 #ret,edges = cv2.threshold(edges, 127,255,cv2.THRESH_BINARY)
-                
+                #edges  = cv2.GaussianBlur(edges, (5,5), 0)
+                 
                 #despeckle image
                 kernel = np.ones((5,5),np.uint8)
+                #this line below is how "fat" or loose the object will fit in the foam
                 edges = cv2.dilate(edges,kernel,iterations = 2)
-                #edges= cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
                 edges = cv2.erode(edges,kernel,iterations = 1)
-                #edges = cv2.adaptiveThreshold(edges, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 						cv2.THRESH_BINARY_INV, 11, 1)
+ 
                 #BLUR THE IMAGE a bit
                 #blurr = (3,3)
                 #edges = cv2.blur(edges,blurr)
@@ -76,9 +78,16 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 
                 #create a blank image
                 contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
+
                 #draw contour on blank image (fill in)
                 cv2.drawContours(contour_image, [item_contour], -1, (255, 255, 255), -1)
                 
+                #Smooth rough edges
+                #contour_image  = cv2.GaussianBlur(contour_image, (5,5), 0)
+                contour_image = cv2.dilate(contour_image,kernel,iterations = 3)
+                contour_image = cv2.erode(contour_image ,kernel,iterations = 1)
+                
+                #invert image
                 contour_image = np.invert(contour_image)
                 
                 #for now just save contour image
