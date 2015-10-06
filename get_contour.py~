@@ -27,9 +27,16 @@ def auto_canny(image, sigma=0.33):
 	return edged
 
 
-def get_contour(img=None, resize_dim=(640,480) ):
+def get_contour(Img_PathandFilename = None, resize_dim=(640,480) ):
 		#returns SVG of contour of object of a given image
-		if img == None: img = cv2.imread('temp_image_file')	
+		if Img_PathandFilename == None: Img_PathandFilename = 'temp_image_file'
+		try:
+			img = cv2.imread(Img_PathandFilename)
+		except:
+			print >> sys.stderr, "******* Could not open image file *******"
+			print >> sys.stderr, "Unexpected error:", sys.exc_info()[0]		
+			sys.exit(-1)	
+		
 		#resize image
 		resized_img = cv2.resize(img, resize_dim, interpolation = cv2.INTER_AREA)
 		print >> sys.stderr, "[ImageReceiver] resized image to:", resize_dim
@@ -39,6 +46,7 @@ def get_contour(img=None, resize_dim=(640,480) ):
 		edges = cv2.Canny(edges,25,200)
 		#ret,edges = cv2.threshold(edges, 127,255,cv2.THRESH_BINARY)
 		
+		#despeckle image
 		kernel = np.ones((5,5),np.uint8)
 		edges = cv2.dilate(edges,kernel,iterations = 2)
 		#edges= cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
