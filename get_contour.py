@@ -38,7 +38,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 
                 #resize image
                 resized_img = cv2.resize(img, resize_dim, interpolation = cv2.INTER_AREA)
-                print >> sys.stderr, "[ImageReceiver] resized image to:", resize_dim
+                print >> sys.stderr, "[get_contour] resized image to:", resize_dim
                 #apply canny
                 edges = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
                 #edges = auto_canny(edges)
@@ -50,7 +50,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 edges = cv2.dilate(edges,kernel,iterations = 2)
                 #edges= cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
                 edges = cv2.erode(edges,kernel,iterations = 1)
-                #edges = cv2.adaptiveThreshold(edges, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,                                      cv2.THRESH_BINARY_INV, 11, 1)
+                #edges = cv2.adaptiveThreshold(edges, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 						cv2.THRESH_BINARY_INV, 11, 1)
                 #BLUR THE IMAGE a bit
                 #blurr = (3,3)
                 #edges = cv2.blur(edges,blurr)
@@ -59,7 +59,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 
                 #find contours
                 contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-                print >> sys.stderr, "[ImageReceiver] Contours found:", len(contours)
+                print >> sys.stderr, "[get_contour] Contours found:", len(contours)
                 #import inspect
                 #print >> sys.stderr, (inspect.getsourcefile(enumerate))
                 #get areas of contours and sort them from greatest to smallest
@@ -76,22 +76,32 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 
                 #create a blank image
                 contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
-                #draw contour on blank image
-                cv2.drawContours(contour_image, [item_contour], -1, (0, 0, 255), 2)
 
+                #draw contour on blank image (fill in)
+                cv2.drawContours(contour_image, [item_contour], -1, (255, 255, 255), -1)
+                
+                #invert image
+                contour_image = np.invert(contour_image)
+                
                 #for now just save contour image
-                cv2.imwrite('contour_image.bmp', contour_image)
+                cv2.imwrite('contour_image.bmp', contour_image )
                 
                 #call potrace to convert to SVG
                 os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
-                print >> sys.stderr, "[ImageReceiver] saved contour image: 'contour_image.bmp'"
+                print >> sys.stderr, "[get_contour] saved contour image: 'contour_image.bmp'"
                 SVG_to_return = cv2.imread('object_contour.svg')
                 
                 #contours_to_return = np.reshape(item_contour, (640,2))
                 contours_to_return = item_contour
                 return SVG_to_return
 
-get_contour(sys.argv[1])
+if __name__=="__main__":
+	if len(sys.argv) > 1:
+		get_contour(sys.argv[1])
+	else:
+		print >> sys.stderr, "Usage: python get_contour.py 'path/imagefile_to_process'"
+		sys.exit(-1)  
+
 
 '''Code below not used
 def rgb2hsv(rgb):
