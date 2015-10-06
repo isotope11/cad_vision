@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+__version__ = '.01'
+__author__ = 'Laird Foret (laird@isotope11.com)'
+__copyright__ = '(C) 2015. GNU GPL 3.'
+
+"""
+#returns SVG of contour of object of a given image
+"""
 
 import cv2
 import sys
@@ -8,7 +16,7 @@ import os
 import colorsys
 
 
-def auto_canny(image, sigma=0.66):
+def auto_canny(image, sigma=0.33):
 	# compute the median of the single channel pixel intensities
 	v = np.median(image)
 	# apply automatic Canny edge detection using the computed median
@@ -19,33 +27,29 @@ def auto_canny(image, sigma=0.66):
 	return edged
 
 
-def get_contour():
-		#read image file
-		img = cv2.imread('temp_image_file')	
-		#img = cv2.imread('background_mask.jpg')
+def get_contour(img=None, resize_dim=(640,480) ):
+		#returns SVG of contour of object of a given image
+		if img == None: img = cv2.imread('temp_image_file')	
 		#resize image
-		dim = (640,480)
-		resized_img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
-		print >> sys.stderr, "[ImageReceiver] resized image to:", dim
+		resized_img = cv2.resize(img, resize_dim, interpolation = cv2.INTER_AREA)
+		print >> sys.stderr, "[ImageReceiver] resized image to:", resize_dim
 		#apply canny
-
 		edges = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
-		edges = auto_canny(edges)
-		#edges = cv2.Canny(edges,40,180)
+		#edges = auto_canny(edges)
+		edges = cv2.Canny(edges,25,200)
 		#ret,edges = cv2.threshold(edges, 127,255,cv2.THRESH_BINARY)
 		
 		kernel = np.ones((5,5),np.uint8)
 		edges = cv2.dilate(edges,kernel,iterations = 2)
 		#edges= cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 		edges = cv2.erode(edges,kernel,iterations = 1)
-		
 		#edges = cv2.adaptiveThreshold(edges, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 					cv2.THRESH_BINARY_INV, 11, 1)
-		
 		#BLUR THE IMAGE a bit
-		blurr = (3,3)
-		edges = cv2.blur(edges,blurr)
-		cv2.imwrite('blurred_image.jpg', edges)
-		print >> sys.stderr, "[ImageReceiver] blurred image:", blurr
+		#blurr = (3,3)
+		#edges = cv2.blur(edges,blurr)
+		#cv2.imwrite('blurred_image.jpg', edges)
+		#print >> sys.stderr, "[ImageReceiver] blurred image:", blurr
+		
 		#find contours
 		contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		print >> sys.stderr, "[ImageReceiver] Contours found:", len(contours)
@@ -64,22 +68,24 @@ def get_contour():
 		item_contour = sorted_areas[0][1]
 		
 		#create a blank image
-		contour_image = np.zeros((dim[1], dim[0], 3), np.uint8)
+		contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
 		#draw contour on blank image
 		cv2.drawContours(contour_image, [item_contour], -1, (0, 0, 255), 2)
-		#contour_image = cv2.erode(edges,kernel,iterations = 1)
-		
-		#return contour image
-		#return contour_image
 
 		#for now just save contour image
 		cv2.imwrite('contour_image.bmp', contour_image)
+		
+		#call potrace to convert to SVG
 		os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
 		print >> sys.stderr, "[ImageReceiver] saved contour image: 'contour_image.bmp'"
+		SVG_to_return = cv2.imread('object_contour.svg')
+		
 		#contours_to_return = np.reshape(item_contour, (640,2))
 		contours_to_return = item_contour
-		return contours_to_return
+		return SVG_to_return
 
+
+'''Code below not used
 def rgb2hsv(rgb):
     return scale_hsv( colorsys.rgb_to_hsv(norm(rgb[0]), norm(rgb[1]), norm(rgb[2])) )
 
