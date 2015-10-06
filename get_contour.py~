@@ -27,9 +27,8 @@ def auto_canny(image, sigma=0.33):
 	return edged
 
 
-def get_contour(Img_PathandFilename = None, resize_dim=(640,480) ):
+def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
 		#returns SVG of contour of object of a given image
-		if Img_PathandFilename == None: Img_PathandFilename = 'temp_image_file'
 		try:
 			img = cv2.imread(Img_PathandFilename)
 		except:
@@ -170,8 +169,5 @@ def remove_background(img, roi_size, bg_percent):
 		# convert to hsv and find range of colors
 		#hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 		
-		
-
-	
-
+'''
 

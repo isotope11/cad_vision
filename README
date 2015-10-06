@@ -1,1 +1,19 @@
-test
+Dependants:
+OpenCV >2.3
+potrace 
+
+get_contour.py:
+
+def get_contour(Img_PathandFilename = None, resize_dim=(640,480) ):
+		#returns SVG of contour of object of a given image
+		if Img_PathandFilename == None: Img_PathandFilename = 'temp_image_file'
+...
+...
+
+right now just saves SVG to current directory:
+os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
+
+if called from python it returns SVG image:
+return SVG_to_return
+
+
