@@ -1,1 +1,19 @@
-test
+Dependants:
+OpenCV >2.3
+potrace 
+
+get_contour.py: 2 params - filename to image to process and tuple of size to resize image before processing
+defaults are:
+
+def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
+
+...
+...
+
+right now just saves SVG to current directory:
+os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
+
+if called from python it returns SVG image:
+return SVG_to_return
+
+

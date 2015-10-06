@@ -2,11 +2,11 @@ Dependants:
 OpenCV >2.3
 potrace 
 
-get_contour.py:
+get_contour.py: 2 params - path&filename of image to process and tuple of size to resize image before processing
+defaults are:
 
-def get_contour(Img_PathandFilename = None, resize_dim=(640,480) ):
-		#returns SVG of contour of object of a given image
-		if Img_PathandFilename == None: Img_PathandFilename = 'temp_image_file'
+def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
+
 ...
 ...
 
