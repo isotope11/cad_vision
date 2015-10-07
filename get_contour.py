@@ -14,7 +14,7 @@ import time
 import imghdr
 import os
 import colorsys
-
+import uuid
 
 def auto_canny(image, sigma=0.33):
         # compute the median of the single channel pixel intensities
@@ -91,11 +91,16 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 contour_image = np.invert(contour_image)
                 
                 #for now just save contour image
-                cv2.imwrite('contour_image.bmp', contour_image )
-                
+                contour_image_filename = str(uuid.uuid1())+'.bmp'
+                cv2.imwrite(contour_image_filename, contour_image )
+     
                 #call potrace to convert to SVG
-                os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
-                print >> sys.stderr, "[get_contour] saved contour image: 'contour_image.bmp'"
+                command = "potrace --svg -k 0.1 "+contour_image_filename+" -o object_contour.svg"
+                os.system(command)
+                #remove temp image file
+                command = 'rm ' + contour_image_filename
+                os.system(command)
+                print >> sys.stderr, "[get_contour] saved contour image:", contour_image_filename
                 SVG_to_return = cv2.imread('object_contour.svg')
                 
                 #contours_to_return = np.reshape(item_contour, (640,2))
