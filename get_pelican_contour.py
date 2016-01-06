@@ -28,7 +28,7 @@ def auto_canny(image, sigma=0.33):
 
 
 #def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
-def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill="#000000", format="-s", width="10in", output="object_contour.svg", resize_dim=(640,480) ):
+def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill="#000000", format="-s", width="10in", height="10in", output="object_contour.svg", resize_dim=(640,480) ):
                 #returns SVG of contour of object of a given image
                 try:
                         img = cv2.imread(Img_PathandFilename)
@@ -96,7 +96,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 
                 #call potrace to convert to SVG
                 #os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
-                os.system("potrace %(opaque)s --fillcolor '#%(fill)s' %(format)s -k 0.1 --width '%(width)sin' contour_image.bmp -o %(output)s" % locals())
+                os.system("potrace %(opaque)s --fillcolor '#%(fill)s' %(format)s -k 0.1 --width '%(width)sin' --height '%(height)sin' contour_image.bmp -o %(output)s" % locals())
                 print >> sys.stderr, "[get_contour] saved contour image: 'contour_image.bmp'"
                 #SVG_to_return = cv2.imread('object_contour.svg')
 		SVG_to_return = cv2.imread(output)
@@ -105,7 +105,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 contours_to_return = item_contour
                 return SVG_to_return
 
-get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], (640,480))
+get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], (640,480))
 #if __name__=="__main__":
 #       if len(sys.argv) > 1:
 #       	get_contour(sys.argv[1])
