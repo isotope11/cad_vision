@@ -16,6 +16,8 @@ import os
 import colorsys
 
 
+
+
 def auto_canny(image, sigma=0.33):
         # compute the median of the single channel pixel intensities
         v = np.median(image)
@@ -28,7 +30,8 @@ def auto_canny(image, sigma=0.33):
 
 
 #def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
-def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill="#000000", format="-s", width="10in", height="10in", output="object_contour.svg", resize_dim=(640,480) ):
+def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill="000000", img_format="-s", width="10", height="10", output="object_contour.svg", resize_dim=(640,480)):
+
                 #returns SVG of contour of object of a given image
                 try:
                         img = cv2.imread(Img_PathandFilename)
@@ -36,7 +39,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                         print >> sys.stderr, "******* Could not open image file *******"
                         print >> sys.stderr, "Unexpected error:", sys.exc_info()[0]             
                         sys.exit(-1)    
-                
+                print 'reading in this file:',Img_PathandFilename
                 #resize image
                 resized_img = cv2.resize(img, resize_dim, interpolation = cv2.INTER_AREA)
                 print >> sys.stderr, "[get_contour] resized image to:", resize_dim
@@ -51,7 +54,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 #despeckle image
                 kernel = np.ones((5,5),np.uint8)
                 #this line below is how "fat" or loose the object will fit in the foam
-                edges = cv2.dilate(edges,kernel,iterations = 2)
+                edges = cv2.dilate(edges,kernel,iterations = 3)
                 edges = cv2.erode(edges,kernel,iterations = 1)
  
                 #BLUR THE IMAGE a bit
@@ -100,6 +103,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 #contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
                 #part of rescaling to make object touch edges of outputted SVG
                 contour_image = np.zeros(((resize_dim[1]*scaling_factor), scaling_factor*resize_dim[0], 3), np.uint8)
+
                 
                 #scaling_factor = 1.0
                 resized_contour = scaling_factor*np.array(item_contour)
@@ -117,26 +121,25 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 #print "bottommost", bottommost
                 
                 #crop image to make object touch edges
-             	contour_image = contour_image[topmost[1]:bottommost[1], leftmost[0]:rightmost[0]]
-                #draw contour on blank image (fill in)
-                cv2.drawContours(contour_image, [item_contour], -1, (255, 255, 255), -1)
+             	cropped_contour_image = contour_image[topmost[1]:bottommost[1], leftmost[0]:rightmost[0]]
+             	#print "cropped_contour_image size = ",cropped_contour_image.shape
                 
                 #Smooth rough edges
                 #contour_image  = cv2.GaussianBlur(contour_image, (5,5), 0)
-                contour_image = cv2.dilate(contour_image,kernel,iterations = 2)
-                contour_image = cv2.erode(contour_image ,kernel,iterations = 1)
+                cropped_contour_image = cv2.dilate(cropped_contour_image,kernel,iterations = 2)
+                cropped_contour_image = cv2.erode(cropped_contour_image,kernel,iterations = 1)
                 
                 #invert image
-                contour_image = np.invert(contour_image)
+                cropped_contour_image = np.invert(cropped_contour_image)
                 
                 #for now just save contour image
                 #contour_image_filename = str(uuid.uuid1())+'.bmp'
                 #cv2.imwrite(contour_image_filename, contour_image )
-                cv2.imwrite('contour_image.bmp', contour_image )
+                cv2.imwrite('contour_image.bmp', cropped_contour_image)
                 
                 #call potrace to convert to SVG
                 #os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
-                os.system("potrace %(opaque)s --fillcolor '#%(fill)s' %(format)s -k 0.1 --width '%(width)sin' --height '%(height)sin' contour_image.bmp -o %(output)s" % locals())
+                os.system("potrace %(opaque)s --fillcolor '#%(fill)s' %(img_format)s -k 0.1 --width '%(width)sin' --height '%(height)sin' contour_image.bmp -o %(output)s" % locals())
                 print >> sys.stderr, "[get_contour] saved contour image: 'contour_image.bmp'"
                 #SVG_to_return = cv2.imread('object_contour.svg')
 		SVG_to_return = cv2.imread(output)
@@ -145,7 +148,8 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 contours_to_return = item_contour
                 return SVG_to_return
 
-get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], (640,480))
+
+get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
 #if __name__=="__main__":
 #       if len(sys.argv) > 1:
 #       	get_contour(sys.argv[1])
