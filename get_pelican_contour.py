@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__version__ = '.01'
+__version__ = '01072016'
 __author__ = 'Laird Foret (laird@isotope11.com)'
 __copyright__ = '(C) 2015. GNU GPL 3.'
 
