@@ -16,18 +16,23 @@ import os
 import colorsys
 import uuid
 
-def auto_canny(image, sigma=0.33):
+IMAGE_X = 640
+IMAGE_Y = 480
+
+def auto_canny(image, sigma=0.5):
         # compute the median of the single channel pixel intensities
         v = np.median(image)
         # apply automatic Canny edge detection using the computed median
         lower = int(max(0, (1.0 - sigma) * v))
         upper = int(min(255, (1.0 + sigma) * v))
         edged = cv2.Canny(image, lower, upper)
+        print >> sys.stderr, "[get_contour] saved canny_img.bmp"
+        cv2.imwrite("canny_img.bmp", edged)
         # return the edged image
         return edged
 
 
-def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
+def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(IMAGE_X,IMAGE_Y) ):
                 #returns SVG of contour of object of a given image
                 try:
                         img = cv2.imread(Img_PathandFilename)
@@ -41,9 +46,11 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 print >> sys.stderr, "[get_contour] resized image to:", resize_dim
                 #apply canny
                 edges = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
-                #edges = auto_canny(edges)
+               
                 #edges  = cv2.GaussianBlur(edges, (3,3), 0)
-                edges = cv2.Canny(edges,30,190)
+                #edges = auto_canny(edges)
+                #this line below is what worked in production
+                edges = cv2.Canny(edges,30,180)
                 #ret,edges = cv2.threshold(edges, 127,255,cv2.THRESH_BINARY)
                 #edges  = cv2.GaussianBlur(edges, (5,5), 0)
                  
@@ -75,16 +82,54 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 #find the nth largest contour [n-1][1], in this case 2
                 #in this case return largest
                 item_contour = sorted_areas[0][1]
+                contour_size = cv2.minAreaRect(item_contour) 
+                print >> sys.stderr, "[get_contour] Contour size",  contour_size
+                center_of_contour = [int(contour_size[0][0]),int(contour_size[0][1])]
+                print center_of_contour
+                print >> sys.stderr, "[get_contour] Contour center",  center_of_contour
+                contour_width = int(contour_size[1][0] )
+                contour_height = int(contour_size[1][1] )
+                print "contour_width;", contour_width
+                print "contour_height:", contour_height
+                scaling_factor = 1.0
+                if contour_width > contour_height: 
+                	print "contour_width is bigger"
+                	scaling_factor = scaling_factor + (1.0-(contour_width / IMAGE_X))
+                else: 
+                	print "contour_height is bigger"
+                	scaling_factor = scaling_factor + (1.0-(contour_height / IMAGE_Y))
+                print "scaling_factor", scaling_factor
                 
-                #create a blank image
-                contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
+                
+                #create a blank image 
+                #contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
+                contour_image = np.zeros(((resize_dim[1]*scaling_factor), scaling_factor*resize_dim[0], 3), np.uint8)
 
                 #draw contour on blank image (fill in)
-                cv2.drawContours(contour_image, [item_contour], -1, (255, 255, 255), -1)
+                #perimeter = cv2.arcLength(item_contour,True)
+                #print "perimeter:", perimeter
                 
-                #Smooth rough edges
+                #scaling_factor = 1.0
+                resized_contour = scaling_factor*np.array(item_contour)
+                resized_contour = resized_contour.astype(int)
+                print item_contour[0], resized_contour[0]
+                cv2.drawContours(contour_image, [resized_contour], -1, (255, 255, 255), -1)
+                
+                leftmost = tuple(resized_contour[resized_contour[:,:,0].argmin()][0])
+                rightmost = tuple(resized_contour[resized_contour[:,:,0].argmax()][0])
+                topmost = tuple(resized_contour[resized_contour[:,:,1].argmin()][0])
+                bottommost = tuple(resized_contour[resized_contour[:,:,1].argmax()][0])
+                #print "leftmost", leftmost
+                #print "rightmost", rightmost
+                #print "topmost", topmost
+                #print "bottommost", bottommost
+                
+                #crop image to make object touch edges
+             	contour_image = contour_image[topmost[1]:bottommost[1], leftmost[0]:rightmost[0]]
+                
+			    #Smooth rough edges
                 #contour_image  = cv2.GaussianBlur(contour_image, (5,5), 0)
-                contour_image = cv2.dilate(contour_image,kernel,iterations = 3)
+                contour_image = cv2.dilate(contour_image,kernel,iterations = 2)
                 contour_image = cv2.erode(contour_image ,kernel,iterations = 1)
                 
                 #invert image
@@ -97,6 +142,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', resize_dim=(640,480) ):
                 #call potrace to convert to SVG
                 command = "potrace --svg -k 0.1 "+contour_image_filename+" -o object_contour.svg"
                 os.system(command)
+                
                 #remove temp image file
                 command = 'rm ' + contour_image_filename
                 os.system(command)
