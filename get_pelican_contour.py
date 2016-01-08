@@ -14,8 +14,7 @@ import time
 import imghdr
 import os
 import colorsys
-
-
+import uuid
 
 
 def auto_canny(image, sigma=0.33):
@@ -39,10 +38,10 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                         print >> sys.stderr, "******* Could not open image file *******"
                         print >> sys.stderr, "Unexpected error:", sys.exc_info()[0]             
                         sys.exit(-1)    
-                print 'reading in this file:',Img_PathandFilename
+
                 #resize image
                 resized_img = cv2.resize(img, resize_dim, interpolation = cv2.INTER_AREA)
-                print >> sys.stderr, "[get_contour] resized image to:", resize_dim
+                print >> sys.stderr, "[get_pelican_contour] resized image to:", resize_dim
                 #apply canny
                 edges = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
                 #edges = auto_canny(edges)
@@ -65,7 +64,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 
                 #find contours
                 contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-                print >> sys.stderr, "[get_contour] Contours found:", len(contours)
+                print >> sys.stderr, "[get_pelican_contour] Contours found:", len(contours)
                 #import inspect
                 #print >> sys.stderr, (inspect.getsourcefile(enumerate))
                 #get areas of contours and sort them from greatest to smallest
@@ -82,29 +81,27 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 
                 #part of rescaling to make object touch edges of outputted SVG
                 contour_size = cv2.minAreaRect(item_contour) 
-                print >> sys.stderr, "[get_contour] Contour size",  contour_size
+                #print >> sys.stderr, "[get_pelican_contour] Contour size",  contour_size
                 center_of_contour = [int(contour_size[0][0]),int(contour_size[0][1])]
-                print center_of_contour
-                print >> sys.stderr, "[get_contour] Contour center",  center_of_contour
+                print >> sys.stderr, "[get_pelican_contour] Largest contour center",  center_of_contour
                 contour_width = int(contour_size[1][0] )
                 contour_height = int(contour_size[1][1] )
-                print "contour_width;", contour_width
-                print "contour_height:", contour_height
+                print >> sys.stderr,"[get_pelican_contour] Largest contour_width", contour_width
+                print >> sys.stderr,"[get_pelican_contour] Largest contour_height:", contour_height
                 scaling_factor = 1.0
                 if contour_width > contour_height: 
-                	print "contour_width is bigger"
+                	print >> sys.stderr, "[get_pelican_contour] Using contour_width to set scaling"
                 	scaling_factor = scaling_factor + (1.0-(contour_width / resize_dim[0]))
                 else: 
-                	print "contour_height is bigger"
+                	print >> sys.stderr, "[get_pelican_contour] Using contour_height to set scaling"
                 	scaling_factor = scaling_factor + (1.0-(contour_height / resize_dim[1]))
-                print "scaling_factor", scaling_factor
+                print >> sys.stderr, "[get_pelican_contour] scaling_factor", scaling_factor
                 
                 #create a blank image
                 #contour_image = np.zeros((resize_dim[1], resize_dim[0], 3), np.uint8)
                 #part of rescaling to make object touch edges of outputted SVG
                 contour_image = np.zeros(((resize_dim[1]*scaling_factor), scaling_factor*resize_dim[0], 3), np.uint8)
-
-                
+     
                 #scaling_factor = 1.0
                 resized_contour = scaling_factor*np.array(item_contour)
                 resized_contour = resized_contour.astype(int)
@@ -125,7 +122,8 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
              	#print "cropped_contour_image size = ",cropped_contour_image.shape
                 
                 #Smooth rough edges
-                #contour_image  = cv2.GaussianBlur(contour_image, (5,5), 0)
+                #line below really seems to help
+                #cropped_contour_image = cv2.GaussianBlur(cropped_contour_image, (5,5), 0)
                 cropped_contour_image = cv2.dilate(cropped_contour_image,kernel,iterations = 2)
                 cropped_contour_image = cv2.erode(cropped_contour_image,kernel,iterations = 1)
                 
@@ -133,20 +131,25 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 cropped_contour_image = np.invert(cropped_contour_image)
                 
                 #for now just save contour image
-                #contour_image_filename = str(uuid.uuid1())+'.bmp'
-                #cv2.imwrite(contour_image_filename, contour_image )
-                cv2.imwrite('contour_image.bmp', cropped_contour_image)
-                
+                contour_image_filename = str(uuid.uuid1())+'.bmp'
+                cv2.imwrite(contour_image_filename, cropped_contour_image )
+                print >> sys.stderr, "[get_pelican_contour] saved contour image:", contour_image_filename
+                    
                 #call potrace to convert to SVG
-                #os.system('potrace --svg -k 0.1 contour_image.bmp -o object_contour.svg')
-                os.system("potrace %(opaque)s --fillcolor '#%(fill)s' %(img_format)s -k 0.1 --width '%(width)sin' --height '%(height)sin' contour_image.bmp -o %(output)s" % locals())
-                print >> sys.stderr, "[get_contour] saved contour image: 'contour_image.bmp'"
+                command_string = "potrace "+opaque+" --fillcolor '#"+fill+"' "+img_format+" -k 0.1 --width "+width+" --height "+height+" "+contour_image_filename+" -o "+output
+                print command_string
+                os.system(command_string)
+                
                 #SVG_to_return = cv2.imread('object_contour.svg')
-		SVG_to_return = cv2.imread(output)
+                #SVG_to_return = cv2.imread(output)
+				
+				#remove temp image file
+                command = 'rm ' + contour_image_filename
+                os.system(command)
                 
                 #contours_to_return = np.reshape(item_contour, (640,2))
-                contours_to_return = item_contour
-                return SVG_to_return
+                #contours_to_return = item_contour
+                #return SVG_to_return
 
 
 get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
