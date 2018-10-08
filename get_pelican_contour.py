@@ -49,12 +49,14 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 edges = cv2.Canny(edges,30,180)
                 #ret,edges = cv2.threshold(edges, 127,255,cv2.THRESH_BINARY)
                 #edges  = cv2.GaussianBlur(edges, (5,5), 0)
+                cv2.imwrite('edges.bmp', edges)
                  
                 #despeckle image
                 kernel = np.ones((5,5),np.uint8)
                 #this line below is how "fat" or loose the object will fit in the foam
                 edges = cv2.dilate(edges,kernel,iterations = 3)
                 edges = cv2.erode(edges,kernel,iterations = 1)
+                cv2.imwrite('despeckled.bmp', edges)
  
                 #BLUR THE IMAGE a bit
                 #blurr = (3,3)
@@ -142,6 +144,7 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 
                 #SVG_to_return = cv2.imread('object_contour.svg')
                 #SVG_to_return = cv2.imread(output)
+                raw_input()
 				
 				#remove temp image file
                 command = 'rm ' + contour_image_filename
@@ -151,8 +154,10 @@ def get_contour(Img_PathandFilename = 'temp_image_file', opaque="--opaque", fill
                 #contours_to_return = item_contour
                 #return SVG_to_return
 
-
-get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+if len(sys.argv) == 2:
+	get_contour(sys.argv[1])
+else:
+	get_contour(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
 #if __name__=="__main__":
 #       if len(sys.argv) > 1:
 #       	get_contour(sys.argv[1])
